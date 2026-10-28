@@ -66,7 +66,7 @@ const config = {
 	musicPlayer: {
 		server: 'netease',  //服务提供商 --网易云音乐
 		type: 'playlist',   //歌单类型
-		id: '2028178887',  //歌单id ---> music.163.com/#/playlist?id=2028178887
+		id: '8161068345',  // xiaozhou 的网易云歌单
 		randomFirstPlay: true,  //进入页面是否随机播放歌单中的某一首（true开启，若开启则 startIndex 忽略）
 		startIndex: 0,          //不随机时，进入页面可以自定义播放第几首（索引从0开始，若超出歌单长度则自动回落为0）
 	},
