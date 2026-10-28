@@ -44,9 +44,10 @@
                       <span ref="audioauthor" class="musicplayer-text"
                         style="bottom: 1.4rem;"
                       >{{ currentSong?.author }}</span>
-                      <audio v-show="false" ref="audioPlayer" :src="currentSong?.url"
+                      <audio v-show="false" ref="audioPlayer" :src="currentSong?.url" preload="metadata"
                       @waiting="onWaiting"
-                      @canplay="onCanPlay">
+                      @canplay="onCanPlay"
+                      @error="onAudioError">
                       </audio>
                       <v-btn :size="xs||sm?22:30" color="#999999" icon @click="previousTrack()">
                       <v-icon>mdi-skip-previous</v-icon>
@@ -70,8 +71,8 @@
                     <div class="signature-hint">点击即可修改</div>
                 </v-card>
 
-                <div class="leleo-left-chart">
-                    <polarchart :style="xs||sm?{'height':'210px'}:{'height':'270px'}"/>
+                <div class="daily-checklist-embed">
+                  <iframe src="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/?embed=daily" title="每日清单" loading="lazy"></iframe>
                 </div>
 
                 <v-container class="leleo-left-socialIconsContainer">

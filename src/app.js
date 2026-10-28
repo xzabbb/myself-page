@@ -285,7 +285,8 @@ export default {
     async getMusicInfo(){
       this.musicinfoLoading = true;
       try {
-        const response = await fetch(`https://api.i-meto.com/meting/api?server=${this.configdata.musicPlayer.server}&type=${this.configdata.musicPlayer.type}&id=${this.configdata.musicPlayer.id}`
+        const apiBase = this.configdata.musicPlayer.api || 'https://meting.mikus.ink/api';
+        const response = await fetch(`${apiBase}?server=${this.configdata.musicPlayer.server}&type=${this.configdata.musicPlayer.type}&id=${this.configdata.musicPlayer.id}`
         );
         if (!response.ok) {
           throw new Error('网络请求失败');
@@ -375,6 +376,14 @@ export default {
 		  const p = this.audioPlayer.play();
 		  if (p && p.catch) p.catch(() => { });
 	  }
+    },
+
+    onAudioError() {
+      this.audioLoading = false;
+      this.isPlaying = false;
+      if (this.musicinfo?.length > 1) {
+        this.playlistIndex = (this.playlistIndex + 1) % this.musicinfo.length;
+      }
     },
 
     expandSwitch() {

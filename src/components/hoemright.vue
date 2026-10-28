@@ -67,8 +67,8 @@
           <div class="website-section-title mt-3 ml-3">
             <v-chip prepend-icon="mdi-webhook" size="large" style="color: var(--leleo-vcard-color);">常用网站</v-chip>
             <div class="website-actions">
-              <v-btn icon="mdi-plus" size="small" variant="tonal" title="添加网站" @click="openAddDialog"></v-btn>
-              <v-btn :icon="deleteMode ? 'mdi-check' : 'mdi-minus'" size="small" variant="tonal" :color="deleteMode ? 'success' : undefined" title="删除网站" @click="deleteMode = !deleteMode"></v-btn>
+              <v-btn size="small" variant="flat" color="primary" prepend-icon="mdi-plus" title="添加网站" @click="openAddDialog">添加</v-btn>
+              <v-btn size="small" variant="flat" :color="deleteMode ? 'success' : 'error'" :prepend-icon="deleteMode ? 'mdi-check' : 'mdi-minus'" title="删除网站" @click="deleteMode = !deleteMode">{{ deleteMode ? '完成' : '删除' }}</v-btn>
             </div>
           </div>
 
@@ -271,14 +271,16 @@ export default {
 }
 
 .website-grid {
-	display: grid;
-	grid-template-columns: repeat(5, minmax(0, 1fr));
-	gap: 14px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
 }
 
 .website-tile {
 	position: relative;
-	padding: 10px 10px 8px;
+	width: 72px;
+	height: 72px;
+	padding: 6px 6px 4px;
 	text-align: center;
 	cursor: pointer;
 	transition: transform .2s ease, box-shadow .2s ease;
@@ -290,9 +292,10 @@ export default {
 }
 
 .website-image-wrap {
-	width: 100%;
-	aspect-ratio: 1;
-	border-radius: 16px;
+	width: 44px;
+	height: 44px;
+	margin: 0 auto;
+	border-radius: 10px;
 	overflow: hidden;
 	display: flex;
 	align-items: center;
@@ -301,8 +304,8 @@ export default {
 }
 
 .website-image {
-	width: 64%;
-	height: 64%;
+	width: 78%;
+	height: 78%;
 }
 
 .website-fallback {
@@ -318,9 +321,9 @@ export default {
 }
 
 .website-name {
-	padding: 8px 2px 2px;
+	padding: 3px 1px 0;
 	font-weight: 700;
-	font-size: .95rem;
+	font-size: .68rem;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -333,13 +336,8 @@ export default {
 	z-index: 3;
 }
 
-@media (max-width: 1200px) {
-	.website-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
 @media (max-width: 700px) {
-	.website-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
-	.website-tile { padding: 7px 7px 5px; }
-	.website-name { font-size: .78rem; }
+	.website-grid { gap: 8px; }
+	.website-actions .v-btn { min-width: 34px; padding: 0 8px; }
 }
 </style>

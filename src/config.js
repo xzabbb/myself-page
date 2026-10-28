@@ -65,6 +65,7 @@ const config = {
 
 	//音乐播放配置，采用MetingJS Api(https://github.com/metowolf/MetingJS)
 	musicPlayer: {
+		api: 'https://meting.mikus.ink/api',
 		server: 'netease',  //服务提供商 --网易云音乐
 		type: 'playlist',   //歌单类型
 		id: '8161068345',  // xiaozhou 的网易云歌单
