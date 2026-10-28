@@ -30,6 +30,7 @@ export default {
       signature: '希望你勇敢自信',
       signatureDraft: '',
       signatureDialog: false,
+      checklistOpacity: 0.92,
       videosrc: '',
       ismusicplayer: false,
       isPlaying:false,
@@ -78,6 +79,8 @@ export default {
     }
     this.projectcards = this.configdata.projectcards;this.socialPlatformIcons = this.configdata.socialPlatformIcons;
     this.signature = localStorage.getItem('xiaozhou-signature') || this.configdata.signature || '希望你勇敢自信';
+    const savedChecklistOpacity = Number(localStorage.getItem('xiaozhou-checklist-opacity'));
+    if (savedChecklistOpacity >= 0.35 && savedChecklistOpacity <= 1) this.checklistOpacity = savedChecklistOpacity;
     this.isloading = true;
     let imageurl = "";
     this.dataConsole();
@@ -170,6 +173,10 @@ export default {
 
     audioLoading(val){
       this.isPlaying = !val;
+    },
+
+    checklistOpacity(val){
+      localStorage.setItem('xiaozhou-checklist-opacity', String(val));
     }
 
   //若弹出框使得页面播放卡顿，可以先停止背景播放

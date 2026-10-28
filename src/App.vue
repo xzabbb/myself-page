@@ -71,8 +71,19 @@
                     <div class="signature-hint">点击即可修改</div>
                 </v-card>
 
-                <div class="daily-checklist-embed">
-                  <iframe src="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/?embed=daily" title="每日清单" loading="lazy"></iframe>
+                <div class="daily-checklist-shell">
+                  <v-menu location="end center" :close-on-content-click="false">
+                    <template v-slot:activator="{ props }">
+                      <v-btn v-bind="props" class="daily-opacity-button" icon="mdi-opacity" size="x-small" title="调整清单透明度"></v-btn>
+                    </template>
+                    <v-card class="pa-3" width="230">
+                      <div class="text-caption mb-1">清单透明度 {{ Math.round(checklistOpacity * 100) }}%</div>
+                      <v-slider v-model="checklistOpacity" :min="0.35" :max="1" :step="0.05" hide-details color="primary"></v-slider>
+                    </v-card>
+                  </v-menu>
+                  <div class="daily-checklist-embed" :style="{ opacity: checklistOpacity }">
+                    <iframe src="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/?embed=daily" title="每日清单" loading="lazy"></iframe>
+                  </div>
                 </div>
 
                 <v-container class="leleo-left-socialIconsContainer">
