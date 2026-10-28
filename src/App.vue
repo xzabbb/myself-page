@@ -61,13 +61,13 @@
                   </transition>
                 </v-avatar>
 
-                <v-card class="ma-5 pa-2 leleo-left-card" variant="tonal" :max-width="xs?270:300" style="text-align: center;">
+                <v-card class="ma-5 pa-3 leleo-left-card signature-card" variant="tonal" :max-width="xs?270:300" @click="openSignatureEditor">
                     <template v-slot:title>
-                    <span>Tags</span>
+                      <span>个性签名</span>
+                      <v-icon size="18" class="ml-2">mdi-pencil-outline</v-icon>
                     </template>
-                    <v-chip v-for="item in personalizedtags" density="compact" link class="ma-1" size="small">
-                    {{item}}
-                    </v-chip>
+                    <div class="signature-text">{{ signature }}</div>
+                    <div class="signature-hint">点击即可修改</div>
                 </v-card>
 
                 <div class="leleo-left-chart">
@@ -114,6 +114,21 @@
             </v-col>
         </v-row>
     </div>
+
+    <v-dialog
+        v-model="signatureDialog"
+        width="480"
+      >
+      <v-card class="pa-5" rounded="xl">
+        <v-card-title>修改个性签名</v-card-title>
+        <v-textarea v-model="signatureDraft" maxlength="80" counter="80" rows="3" variant="outlined" autofocus></v-textarea>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click="signatureDialog = false">取消</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveSignature">保存</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog
         v-model="dialog1"

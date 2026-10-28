@@ -64,55 +64,44 @@
             </v-col>
           </v-row>
           
-          <v-chip class="mt-3 ml-3" prepend-icon="mdi-webhook"  size="large" style="color: var(--leleo-vcard-color);">
-            常用网站
-          </v-chip>
-          <v-container>
-            <v-row>
-              <v-col
-                v-for="(item,key) in projectcards"
-                cols="6"
-                md="4"
-                lg="3"
-                :style="xs?{'padding': '6px'}:{}"
-              >
-                <v-card class="">
-                  <v-img
-                    aspect-ratio="1.7778"
-                    :src= item.img
-                    cover
-                    :style="{ opacity: 0.8 }"
-                  ></v-img>
-                  <v-card-title :style="xs?{'font-size': '0.9rem','padding': '0.15rem 0.5rem'}:{'font-size': '1.1rem','padding':'0.2rem 0.8rem'}">
-                    {{item.title}}
-                  </v-card-title>
-                  <v-card-subtitle :style="xs?{'font-size': '0.6rem','padding': '0.1rem 0.5rem'}:{'font-size': '0.8rem','padding':'0.15rem 0.6rem'}">
-                    {{ item.subtitle }}
-                  </v-card-subtitle>
+          <div class="website-section-title mt-3 ml-3">
+            <v-chip prepend-icon="mdi-webhook" size="large" style="color: var(--leleo-vcard-color);">常用网站</v-chip>
+            <div class="website-actions">
+              <v-btn icon="mdi-plus" size="small" variant="tonal" title="添加网站" @click="openAddDialog"></v-btn>
+              <v-btn :icon="deleteMode ? 'mdi-check' : 'mdi-minus'" size="small" variant="tonal" :color="deleteMode ? 'success' : undefined" title="删除网站" @click="deleteMode = !deleteMode"></v-btn>
+            </div>
+          </div>
 
-                  <v-card-actions :style="xs||sm||md?{'padding': '0','min-height': '0','height':'2.5rem'}:{'min-height': '0','height':'2.8rem'}">
-                    <v-btn :href="item.url"
-                    target="_blank"
-                      :text= "item.go"
-                    ></v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn
-                      :icon="item.show ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                      @click="item.show = !item.show;projectcardsShow(key);"
-                    ></v-btn>
-                  </v-card-actions>
-                  <v-expand-transition>
-                    <div v-show="item.show">
-                      <v-divider></v-divider>
-                      <v-card-text :style="xs?{'font-size': '0.7rem'}:{}">
-                        {{item.text}}
-                      </v-card-text>
-                    </div>
-                  </v-expand-transition>
-                </v-card>
-              </v-col>
-            </v-row>
+          <v-container>
+            <div class="website-grid">
+              <v-card v-for="(item,index) in websites" :key="item.url + index" class="website-tile" @click="openWebsite(item)">
+                <v-btn v-if="deleteMode" icon="mdi-close" size="x-small" color="error" class="website-delete" @click.stop="removeWebsite(index)"></v-btn>
+                <div class="website-image-wrap">
+                  <v-img :src="item.img" :alt="item.title" class="website-image" contain>
+                    <template v-slot:error>
+                      <div class="website-fallback">{{ item.title.slice(0, 1).toUpperCase() }}</div>
+                    </template>
+                  </v-img>
+                </div>
+                <div class="website-name">{{ item.title }}</div>
+              </v-card>
+            </div>
           </v-container>
+
+          <v-dialog v-model="addDialog" width="480">
+            <v-card class="pa-5" rounded="xl">
+              <v-card-title>添加常用网站</v-card-title>
+              <v-text-field v-model="newWebsite.title" label="网站名称" variant="outlined"></v-text-field>
+              <v-text-field v-model="newWebsite.url" label="网站地址" placeholder="https://example.com" variant="outlined"></v-text-field>
+              <v-text-field v-model="newWebsite.img" label="图片地址（可选）" hint="留空时自动使用网站图标" persistent-hint variant="outlined"></v-text-field>
+              <v-alert v-if="formError" type="warning" variant="tonal" density="compact" class="mb-3">{{ formError }}</v-alert>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn @click="addDialog = false">取消</v-btn>
+                <v-btn color="primary" variant="flat" @click="addWebsite">添加</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
           
         </div>       
       </div>
@@ -130,6 +119,11 @@ export default {
     props: ['configdata','formattedTime','formattedDate','projectcards'],
 	data() {
 		return {
+			websites: [],
+			deleteMode: false,
+			addDialog: false,
+			formError: '',
+			newWebsite: { title: '', url: '', img: '' },
 			searchQuery: '',
 			selectedEngine: { title: 'Bing', value: 'bing' },
       		searchEngines :[
@@ -139,6 +133,20 @@ export default {
 				{ title: 'Yandex', value: 'yandex' },
 				{ title: 'DuckDuckGo', value: 'duckduckgo' },
 			]
+		}
+  },
+	watch: {
+		projectcards: {
+			immediate: true,
+			handler(value){
+				if(!Array.isArray(value)) return;
+				const saved = localStorage.getItem('xiaozhou-websites');
+				try {
+					this.websites = saved ? JSON.parse(saved) : value.map(item => ({ title: item.title, url: item.url, img: item.img }));
+				} catch {
+					this.websites = value.map(item => ({ title: item.title, url: item.url, img: item.img }));
+				}
+			}
 		}
 	},
     setup() {
@@ -152,13 +160,41 @@ export default {
 		}
 	},
     methods:{
-      projectcardsShow(key){
-        for(let i = 0;i < this.projectcards.length;i++){
-          if(i != key){
-            this.projectcards[i].show = false;
-          }
-        }
-      },
+	  persistWebsites(){
+		localStorage.setItem('xiaozhou-websites', JSON.stringify(this.websites));
+	  },
+	  openAddDialog(){
+		this.newWebsite = { title: '', url: '', img: '' };
+		this.formError = '';
+		this.addDialog = true;
+	  },
+	  addWebsite(){
+		const title = this.newWebsite.title.trim();
+		let url = this.newWebsite.url.trim();
+		if(!title || !url){
+		  this.formError = '请填写网站名称和地址。';
+		  return;
+		}
+		if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+		try {
+		  const parsed = new URL(url);
+		  const img = this.newWebsite.img.trim() || `${parsed.origin}/favicon.ico`;
+		  this.websites.push({ title, url: parsed.href, img });
+		  this.persistWebsites();
+		  this.addDialog = false;
+		} catch {
+		  this.formError = '网站地址格式不正确。';
+		}
+	  },
+	  removeWebsite(index){
+		this.websites.splice(index, 1);
+		this.persistWebsites();
+		if(!this.websites.length) this.deleteMode = false;
+	  },
+	  openWebsite(item){
+		if(this.deleteMode) return;
+		window.open(item.url, '_blank', 'noopener,noreferrer');
+	  },
 	  performSearch() {
 		const query = this.searchQuery.trim();
 		if (!query) return;
@@ -219,5 +255,91 @@ export default {
 	border-radius: 5%;
 	color: var(--leleo-vcard-color);
 	overflow: hidden;
+}
+
+.website-section-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.website-actions {
+	display: flex;
+	gap: .55rem;
+	margin-right: 1rem;
+}
+
+.website-grid {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 14px;
+}
+
+.website-tile {
+	position: relative;
+	padding: 10px 10px 8px;
+	text-align: center;
+	cursor: pointer;
+	transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.website-tile:hover {
+	transform: translateY(-4px) scale(1.02);
+	box-shadow: 0 10px 26px rgba(34, 28, 80, .2);
+}
+
+.website-image-wrap {
+	width: 100%;
+	aspect-ratio: 1;
+	border-radius: 16px;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, .38);
+}
+
+.website-image {
+	width: 64%;
+	height: 64%;
+}
+
+.website-fallback {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	font-weight: 800;
+	background: linear-gradient(145deg, #7c5cfc, #32e6c4);
+	color: white;
+}
+
+.website-name {
+	padding: 8px 2px 2px;
+	font-weight: 700;
+	font-size: .95rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.website-delete {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	z-index: 3;
+}
+
+@media (max-width: 1200px) {
+	.website-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 700px) {
+	.website-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+	.website-tile { padding: 7px 7px 5px; }
+	.website-name { font-size: .78rem; }
 }
 </style>

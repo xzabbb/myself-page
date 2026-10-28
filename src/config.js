@@ -9,6 +9,7 @@ const config = {
 
 	avatar: "/img/avatar.jpg", // 头像
 	welcometitle: "Hi, I'm xiaozhou", // 标题
+	signature: "希望你勇敢自信",
 
 	// 颜色配置
 	color: {
@@ -133,9 +134,9 @@ const config = {
 
 	//项目卡片 其中 字段"show"控制初始卡片的text是否展开
 	projectcards: [
-		{ go: "✨ 打开", img: "/img/sunshine.jpg", title: "ChatGPT", subtitle: "AI · 灵感与效率", text: "学习、写作与日常创意的 AI 助手。", url: "https://chatgpt.com", show: false },
-		{ go: "💻 打开", img: "/img/sunshine.jpg", title: "GitHub", subtitle: "开发 · 代码世界", text: "收藏开源项目，记录每一次进步。", url: "https://github.com", show: false },
-		{ go: "🎬 打开", img: "/img/sunshine.jpg", title: "哔哩哔哩", subtitle: "视频 · 学习与快乐", text: "从知识到兴趣，发现更多有趣内容。", url: "https://www.bilibili.com", show: false },
+		{ img: "https://chatgpt.com/favicon.ico", title: "ChatGPT", url: "https://chatgpt.com" },
+		{ img: "https://github.com/favicon.ico", title: "GitHub", url: "https://github.com" },
+		{ img: "https://www.bilibili.com/favicon.ico", title: "哔哩哔哩", url: "https://www.bilibili.com" },
 	],
 
 	statement: ["希望你勇敢自信", "Copyright © 2026 xiaozhou"],

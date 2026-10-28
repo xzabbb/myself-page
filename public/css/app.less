@@ -122,6 +122,25 @@
                 transform: scale(1.2);
             }
         }
+        .signature-card{
+            width: calc(100% - 2rem);
+            text-align: center;
+            cursor: pointer;
+            transition: transform .2s ease, background-color .2s ease;
+        }
+        .signature-card:hover{
+            transform: translateY(-2px);
+        }
+        .signature-text{
+            padding: .2rem .7rem .45rem;
+            line-height: 1.65;
+            font-size: .98rem;
+            word-break: break-word;
+        }
+        .signature-hint{
+            font-size: .7rem;
+            opacity: .62;
+        }
     }
     .clock-font{
         font-family: "digitalfont";

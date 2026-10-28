@@ -27,7 +27,9 @@ export default {
       configdata: config,
       dialog1: false,
       dialog2: false,
-      personalizedtags: null,
+      signature: '希望你勇敢自信',
+      signatureDraft: '',
+      signatureDialog: false,
       videosrc: '',
       ismusicplayer: false,
       isPlaying:false,
@@ -75,7 +77,7 @@ export default {
       this.configdata = JSON.parse(import.meta.env.VITE_CONFIG);
     }
     this.projectcards = this.configdata.projectcards;this.socialPlatformIcons = this.configdata.socialPlatformIcons;
-    this.personalizedtags = this.configdata.tags;
+    this.signature = localStorage.getItem('xiaozhou-signature') || this.configdata.signature || '希望你勇敢自信';
     this.isloading = true;
     let imageurl = "";
     this.dataConsole();
@@ -192,6 +194,19 @@ export default {
   
   methods: {
     getCookie,setMeta,getFormattedTime,getFormattedDate,dataConsole,
+
+    openSignatureEditor(){
+      this.signatureDraft = this.signature;
+      this.signatureDialog = true;
+    },
+
+    saveSignature(){
+      const value = this.signatureDraft.trim();
+      if(!value) return;
+      this.signature = value;
+      localStorage.setItem('xiaozhou-signature', value);
+      this.signatureDialog = false;
+    },
 
     setMainProperty(imageurl){
       const root = document.documentElement;
