@@ -285,17 +285,25 @@ export default {
     async getMusicInfo(){
       this.musicinfoLoading = true;
       try {
-        const apiBase = this.configdata.musicPlayer.api || 'https://meting.mikus.ink/api';
+        const apiBase = this.configdata.musicPlayer.api || 'https://api.injahow.cn/meting/';
         const response = await fetch(`${apiBase}?server=${this.configdata.musicPlayer.server}&type=${this.configdata.musicPlayer.type}&id=${this.configdata.musicPlayer.id}`
         );
         if (!response.ok) {
           throw new Error('网络请求失败');
         }
-        this.musicinfo = await response.json();
+        const songs = await response.json();
+        if (!Array.isArray(songs) || !songs.length) throw new Error('歌单数据为空');
+        this.musicinfo = songs.map(song => ({
+          ...song,
+          title: song.title || song.name || '未知歌曲',
+          author: song.author || song.artist || '未知歌手'
+        }));
         this.musicinfoLoading = false;
 		this.initPlaylistStart();
       } catch (error) {
         console.error('请求失败:', error);
+        this.musicinfo = [];
+        this.musicinfoLoading = false;
       }
     },
 

@@ -64,7 +64,7 @@
 
                 <v-card class="ma-5 pa-3 leleo-left-card signature-card" variant="tonal" :max-width="xs?270:300" @click="openSignatureEditor">
                     <template v-slot:title>
-                      <span>个性签名</span>
+                      <span class="signature-title">个性签名</span>
                       <v-icon size="18" class="ml-2">mdi-pencil-outline</v-icon>
                     </template>
                     <div class="signature-text">{{ signature }}</div>

@@ -66,16 +66,21 @@
           
           <div class="website-section-title mt-3 ml-3">
             <v-chip prepend-icon="mdi-webhook" size="large" style="color: var(--leleo-vcard-color);">常用网站</v-chip>
-            <div class="website-actions">
-              <v-btn size="small" variant="flat" color="primary" prepend-icon="mdi-plus" title="添加网站" @click="openAddDialog">添加</v-btn>
-              <v-btn size="small" variant="flat" :color="deleteMode ? 'success' : 'error'" :prepend-icon="deleteMode ? 'mdi-check' : 'mdi-minus'" title="删除网站" @click="deleteMode = !deleteMode">{{ deleteMode ? '完成' : '删除' }}</v-btn>
-            </div>
           </div>
 
           <v-container>
             <div class="website-grid">
-              <v-card v-for="(item,index) in websites" :key="item.url + index" class="website-tile" @click="openWebsite(item)">
-                <v-btn v-if="deleteMode" icon="mdi-close" size="x-small" color="error" class="website-delete" @click.stop="removeWebsite(index)"></v-btn>
+              <v-card v-for="(item,index) in websites" :key="item.url + index" class="website-tile" draggable="true"
+                @dragstart="startDrag(index, $event)" @dragover.prevent @drop="dropWebsite(index)" @dragend="finishDrag" @click="openWebsite(item)">
+                <v-menu location="bottom end">
+                  <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" icon="mdi-dots-horizontal" size="x-small" variant="flat" class="website-more" @click.stop></v-btn>
+                  </template>
+                  <v-list density="compact" class="website-menu">
+                    <v-list-item prepend-icon="mdi-pencil-outline" title="重命名" @click="openRenameDialog(index)"></v-list-item>
+                    <v-list-item prepend-icon="mdi-delete-outline" title="删除" class="delete-menu-item" @click="removeWebsite(index)"></v-list-item>
+                  </v-list>
+                </v-menu>
                 <div class="website-image-wrap">
                   <v-img :src="item.img" :alt="item.title" class="website-image" contain>
                     <template v-slot:error>
@@ -85,6 +90,10 @@
                 </div>
                 <div class="website-name">{{ item.title }}</div>
               </v-card>
+              <button type="button" class="website-add-tile" @click="openAddDialog">
+                <span class="website-add-icon"><v-icon icon="mdi-plus"></v-icon></span>
+                <span>添加快捷方式</span>
+              </button>
             </div>
           </v-container>
 
@@ -99,6 +108,18 @@
                 <v-spacer></v-spacer>
                 <v-btn @click="addDialog = false">取消</v-btn>
                 <v-btn color="primary" variant="flat" @click="addWebsite">添加</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+          <v-dialog v-model="renameDialog" width="420">
+            <v-card class="pa-5" rounded="xl">
+              <v-card-title>重命名快捷方式</v-card-title>
+              <v-text-field v-model="renameTitle" label="新名称" maxlength="30" variant="outlined" autofocus @keyup.enter="renameWebsite"></v-text-field>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn @click="renameDialog = false">取消</v-btn>
+                <v-btn color="primary" variant="flat" @click="renameWebsite">保存</v-btn>
               </v-card-actions>
             </v-card>
           </v-dialog>
@@ -120,8 +141,12 @@ export default {
 	data() {
 		return {
 			websites: [],
-			deleteMode: false,
+			dragIndex: null,
+			wasDragging: false,
 			addDialog: false,
+			renameDialog: false,
+			renameIndex: -1,
+			renameTitle: '',
 			formError: '',
 			newWebsite: { title: '', url: '', img: '' },
 			searchQuery: '',
@@ -189,10 +214,38 @@ export default {
 	  removeWebsite(index){
 		this.websites.splice(index, 1);
 		this.persistWebsites();
-		if(!this.websites.length) this.deleteMode = false;
+	  },
+	  openRenameDialog(index){
+		this.renameIndex = index;
+		this.renameTitle = this.websites[index]?.title || '';
+		this.renameDialog = true;
+	  },
+	  renameWebsite(){
+		const title = this.renameTitle.trim();
+		if(!title || this.renameIndex < 0) return;
+		this.websites[this.renameIndex].title = title;
+		this.persistWebsites();
+		this.renameDialog = false;
+	  },
+	  startDrag(index, event){
+		this.dragIndex = index;
+		this.wasDragging = true;
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', String(index));
+	  },
+	  dropWebsite(index){
+		if(this.dragIndex === null || this.dragIndex === index) return;
+		const [moved] = this.websites.splice(this.dragIndex, 1);
+		this.websites.splice(index, 0, moved);
+		this.persistWebsites();
+		this.dragIndex = index;
+	  },
+	  finishDrag(){
+		this.dragIndex = null;
+		setTimeout(() => { this.wasDragging = false; }, 80);
 	  },
 	  openWebsite(item){
-		if(this.deleteMode) return;
+		if(this.wasDragging) return;
 		window.open(item.url, '_blank', 'noopener,noreferrer');
 	  },
 	  performSearch() {
@@ -264,16 +317,11 @@ export default {
 	gap: 1rem;
 }
 
-.website-actions {
-	display: flex;
-	gap: .55rem;
-	margin-right: 1rem;
-}
-
 .website-grid {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: 14px 12px;
+	align-items: flex-start;
 }
 
 .website-tile {
@@ -284,6 +332,7 @@ export default {
 	text-align: center;
 	cursor: pointer;
 	transition: transform .2s ease, box-shadow .2s ease;
+	overflow: visible;
 }
 
 .website-tile:hover {
@@ -329,15 +378,67 @@ export default {
 	text-overflow: ellipsis;
 }
 
-.website-delete {
+.website-more {
 	position: absolute;
-	top: 4px;
-	right: 4px;
-	z-index: 3;
+	top: -8px;
+	right: -8px;
+	z-index: 5;
+	opacity: 0;
+	transform: scale(.8);
+	transition: opacity .16s ease, transform .16s ease;
+	background: rgba(255,255,255,.96) !important;
+	box-shadow: 0 3px 12px rgba(20,25,40,.22);
+}
+
+.website-tile:hover .website-more,
+.website-more:focus-visible {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.website-menu {
+	min-width: 132px;
+	background: rgba(255,255,255,.97) !important;
+	box-shadow: 0 10px 30px rgba(20,25,40,.2);
+}
+
+.delete-menu-item { color: #c74646; }
+
+.website-add-tile {
+	width: 82px;
+	min-height: 72px;
+	border: 0;
+	background: transparent;
+	color: var(--leleo-vcard-color);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	font: inherit;
+	font-size: .68rem;
+	font-weight: 700;
+}
+
+.website-add-icon {
+	width: 44px;
+	height: 44px;
+	display: grid;
+	place-items: center;
+	border-radius: 12px;
+	background: rgba(255,255,255,.94);
+	color: #30333b;
+	box-shadow: 0 4px 14px rgba(28,28,40,.16);
+	transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.website-add-tile:hover .website-add-icon {
+	transform: translateY(-3px);
+	box-shadow: 0 8px 20px rgba(28,28,40,.22);
 }
 
 @media (max-width: 700px) {
 	.website-grid { gap: 8px; }
-	.website-actions .v-btn { min-width: 34px; padding: 0 8px; }
+	.website-more { opacity: 1; transform: scale(.9); }
 }
 </style>
