@@ -416,6 +416,14 @@ export default {
 	background: rgba(255,255,255,.16);
 }
 
+.category-tabs :deep(.v-chip),
+.category-tabs :deep(.v-chip__content),
+.category-tabs :deep(.v-chip__filter),
+.website-section-title :deep(.v-btn),
+.website-section-title :deep(.v-icon) {
+	color: #fff !important;
+}
+
 .category-count {
 	margin-left: 7px;
 	min-width: 18px;
@@ -426,6 +434,7 @@ export default {
 	border-radius: 9px;
 	font-size: .66rem;
 	background: rgba(255,255,255,.44);
+	color: #fff !important;
 }
 
 .category-manager-list {
