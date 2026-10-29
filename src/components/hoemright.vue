@@ -79,6 +79,7 @@
             <div class="website-grid">
               <v-card v-for="entry in currentWebsites" :key="entry.item.url + entry.index" class="website-tile" draggable="true"
                 @dragstart="startDrag(entry.index, $event)" @dragover.prevent @drop="dropWebsite(entry.index)" @dragend="finishDrag" @click="openWebsite(entry.item)">
+                <v-tooltip activator="parent" location="top" :open-delay="250">{{ entry.item.title }}</v-tooltip>
                 <v-menu location="bottom end">
                   <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" icon="mdi-dots-horizontal" size="x-small" variant="flat" class="website-more" @click.stop></v-btn>
@@ -456,8 +457,8 @@ export default {
 
 .website-tile {
 	position: relative;
-	width: 72px;
-	height: 72px;
+	width: 96px;
+	height: 96px;
 	padding: 6px 6px 4px;
 	text-align: center;
 	cursor: pointer;
@@ -471,8 +472,8 @@ export default {
 }
 
 .website-image-wrap {
-	width: 44px;
-	height: 44px;
+	width: 66px;
+	height: 66px;
 	margin: 0 auto;
 	border-radius: 10px;
 	overflow: hidden;
