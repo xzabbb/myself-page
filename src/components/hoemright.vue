@@ -71,7 +71,9 @@
 
           <v-container>
             <v-chip-group v-model="activeCategoryId" mandatory class="category-tabs mb-4">
-              <v-chip v-for="category in categories" :key="category.id" :value="category.id" filter variant="tonal">
+              <v-chip v-for="(category, categoryIndex) in categories" :key="category.id" :value="category.id" filter variant="tonal"
+                draggable="true" class="category-chip" :class="{ 'category-dragging': categoryDragIndex === categoryIndex }"
+                @dragstart.stop="startCategoryDrag(categoryIndex, $event)" @dragover.prevent @drop.stop.prevent="dropCategory(categoryIndex)" @dragend="finishCategoryDrag">
                 {{ category.name }}
                 <span class="category-count">{{ countByCategory(category.id) }}</span>
               </v-chip>
@@ -178,6 +180,7 @@ export default {
 			activeCategoryId: 'study',
 			categoryDialog: false,
 			newCategoryName: '',
+			categoryDragIndex: null,
 			dragIndex: null,
 			wasDragging: false,
 			addDialog: false,
@@ -250,6 +253,21 @@ export default {
 	  },
 	  countByCategory(categoryId){
 		return this.websites.filter(item => item.categoryId === categoryId).length;
+	  },
+	  startCategoryDrag(index, event){
+		this.categoryDragIndex = index;
+		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData('text/plain', this.categories[index].id);
+	  },
+	  dropCategory(index){
+		if(this.categoryDragIndex === null || this.categoryDragIndex === index) return;
+		const [movedCategory] = this.categories.splice(this.categoryDragIndex, 1);
+		this.categories.splice(index, 0, movedCategory);
+		this.categoryDragIndex = index;
+		this.persistCategories();
+	  },
+	  finishCategoryDrag(){
+		this.categoryDragIndex = null;
 	  },
 	  openAddDialog(){
 		this.newWebsite = { title: '', url: '', img: '', categoryId: this.activeCategoryId };
@@ -423,6 +441,18 @@ export default {
 .website-section-title :deep(.v-btn),
 .website-section-title :deep(.v-icon) {
 	color: #fff !important;
+}
+
+.category-chip {
+	cursor: grab;
+	user-select: none;
+	transition: transform .18s ease, opacity .18s ease;
+}
+
+.category-chip:active { cursor: grabbing; }
+.category-chip.category-dragging {
+	opacity: .58;
+	transform: scale(.95);
 }
 
 .category-count {
