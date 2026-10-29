@@ -94,41 +94,32 @@ export default {
           config.avatar,
           ...config.projectcards.map(item => item.img)
         ];
-        return new Promise((resolve, reject) => {
-          const imagePromises = imageUrls.map((url) => {
-            return new Promise((resolve, reject) => {
-                const imgs = new Image();
-                imgs.src = url;
-                imgs.onload = () => resolve();
-                imgs.onerror = (err) => reject(err);
-            });
-          })
+        return new Promise((resolve) => {
+          let settled = false;
+          const finish = () => {
+            if(settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            resolve();
+          };
+          const timeoutId = setTimeout(finish, 2500);
 
-          // 设置超时机制：2.5秒
-          const timeoutPromise = new Promise((resolve) => {
-            setTimeout(() => {
-              resolve();
-            }, 2500);
+          imageUrls.forEach((url) => {
+            const image = new Image();
+            image.src = url;
           });
-          
-          // 等待所有图片加载完成或超时
-          Promise.race([Promise.all(imagePromises), timeoutPromise]).then(()=>{
-            if(imageurl){
-              const img = new Image();
-              img.src = imageurl;
-              // resolve() 函数通将一个 Promise 对象从未完成状态转变为已完成状态
-              img.onload = () => {resolve();};
-              img.onerror = (err) => {reject(err);};
-            }else{
-              const video = this.$refs.VdPlayer;
-              video.onloadedmetadata = () => {
-                setTimeout(() => {
-                }, "200");  
-                resolve();
-              };
-              video.onerror = (err) => {resolve();};
-            }
-          })
+
+          if(imageurl){
+            const background = new Image();
+            background.onload = finish;
+            background.onerror = finish;
+            background.src = imageurl;
+          }else{
+            const video = this.$refs.VdPlayer;
+            if(!video) return finish();
+            video.onloadedmetadata = finish;
+            video.onerror = finish;
+          }
         });
      };
 
