@@ -181,6 +181,8 @@ export default {
 			categoryDialog: false,
 			newCategoryName: '',
 			categoryDragIndex: null,
+			shortcutSyncReady: false,
+			shortcutSyncTimer: null,
 			dragIndex: null,
 			wasDragging: false,
 			addDialog: false,
@@ -227,8 +229,15 @@ export default {
 				}
 				this.persistCategories();
 				this.persistWebsites();
+				this.$nextTick(() => this.loadRemoteShortcuts(true));
 			}
 		}
+	},
+	mounted(){
+		this.shortcutSyncTimer = setInterval(() => this.loadRemoteShortcuts(false), 10000);
+	},
+	beforeUnmount(){
+		if(this.shortcutSyncTimer) clearInterval(this.shortcutSyncTimer);
 	},
     setup() {
       const { xs,sm,md } = useDisplay();
@@ -246,10 +255,47 @@ export default {
     methods:{
 	  persistWebsites(){
 		localStorage.setItem('xiaozhou-websites', JSON.stringify(this.websites));
+		if(this.shortcutSyncReady) this.pushRemoteShortcuts();
 	  },
 	  persistCategories(){
 		this.categories = this.categories.filter(category => category.name.trim()).map(category => ({ ...category, name: category.name.trim() }));
 		localStorage.setItem('xiaozhou-website-categories', JSON.stringify(this.categories));
+		if(this.shortcutSyncReady) this.pushRemoteShortcuts();
+	  },
+	  async pushRemoteShortcuts(){
+		try {
+			await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/shortcuts', {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ data: { categories: this.categories, websites: this.websites } })
+			});
+		} catch (error) {
+			console.error('常用网站同步失败', error);
+		}
+	  },
+	  async loadRemoteShortcuts(seedWhenEmpty = false){
+		try {
+			const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/shortcuts', { cache: 'no-store' });
+			if(!response.ok) throw new Error(`同步请求失败: ${response.status}`);
+			const result = await response.json();
+			if(result.data?.categories?.length && Array.isArray(result.data.websites)){
+				const remoteSnapshot = JSON.stringify(result.data);
+				const localSnapshot = JSON.stringify({ categories: this.categories, websites: this.websites });
+				if(remoteSnapshot !== localSnapshot){
+					this.categories = result.data.categories;
+					this.websites = result.data.websites;
+					if(!this.categories.some(category => category.id === this.activeCategoryId)) this.activeCategoryId = this.categories[0].id;
+					localStorage.setItem('xiaozhou-website-categories', JSON.stringify(this.categories));
+					localStorage.setItem('xiaozhou-websites', JSON.stringify(this.websites));
+				}
+			} else if(seedWhenEmpty) {
+				await this.pushRemoteShortcuts();
+			}
+			this.shortcutSyncReady = true;
+		} catch (error) {
+			console.error('读取常用网站同步数据失败', error);
+			this.shortcutSyncReady = true;
+		}
 	  },
 	  countByCategory(categoryId){
 		return this.websites.filter(item => item.categoryId === categoryId).length;
