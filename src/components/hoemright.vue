@@ -566,8 +566,8 @@ export default {
 .delete-menu-item { color: #c74646; }
 
 .website-add-tile {
-	width: 82px;
-	min-height: 72px;
+	width: 96px;
+	min-height: 96px;
 	border: 0;
 	background: transparent;
 	color: var(--leleo-vcard-color);
@@ -582,14 +582,14 @@ export default {
 }
 
 .website-add-icon {
-	width: 44px;
-	height: 44px;
+	width: 66px;
+	height: 66px;
 	display: grid;
 	place-items: center;
-	border-radius: 12px;
-	background: rgba(255,255,255,.94);
+	border-radius: 10px;
+	background: rgba(255, 255, 255, .38);
 	color: #30333b;
-	box-shadow: 0 4px 14px rgba(28,28,40,.16);
+	box-shadow: none;
 	transition: transform .18s ease, box-shadow .18s ease;
 }
 
