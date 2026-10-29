@@ -7,7 +7,7 @@ const config = {
 		icon: '/favicon.ico'   //网页图标，支持外链
 	},
 
-	avatar: "/img/avatar.jpg", // 头像
+	avatar: "/img/avatar.png", // 头像
 	welcometitle: "Hi, I'm xiaozhou", // 标题
 	signature: "希望你勇敢自信",
 

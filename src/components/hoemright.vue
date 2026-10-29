@@ -281,7 +281,9 @@ export default {
 			if(result.data?.categories?.length && Array.isArray(result.data.websites)){
 				const remoteSnapshot = JSON.stringify(result.data);
 				const localSnapshot = JSON.stringify({ categories: this.categories, websites: this.websites });
-				if(remoteSnapshot !== localSnapshot){
+				if(seedWhenEmpty && this.websites.length > result.data.websites.length){
+					await this.pushRemoteShortcuts();
+				} else if(remoteSnapshot !== localSnapshot){
 					this.categories = result.data.categories;
 					this.websites = result.data.websites;
 					if(!this.categories.some(category => category.id === this.activeCategoryId)) this.activeCategoryId = this.categories[0].id;
