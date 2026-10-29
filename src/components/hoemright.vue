@@ -66,29 +66,36 @@
           
           <div class="website-section-title mt-3 ml-3">
             <v-chip prepend-icon="mdi-webhook" size="large" style="color: var(--leleo-vcard-color);">常用网站</v-chip>
+            <v-btn size="small" variant="tonal" prepend-icon="mdi-shape-outline" class="mr-4" @click="categoryDialog = true">管理分类</v-btn>
           </div>
 
           <v-container>
+            <v-chip-group v-model="activeCategoryId" mandatory class="category-tabs mb-4">
+              <v-chip v-for="category in categories" :key="category.id" :value="category.id" filter variant="tonal">
+                {{ category.name }}
+                <span class="category-count">{{ countByCategory(category.id) }}</span>
+              </v-chip>
+            </v-chip-group>
             <div class="website-grid">
-              <v-card v-for="(item,index) in websites" :key="item.url + index" class="website-tile" draggable="true"
-                @dragstart="startDrag(index, $event)" @dragover.prevent @drop="dropWebsite(index)" @dragend="finishDrag" @click="openWebsite(item)">
+              <v-card v-for="entry in currentWebsites" :key="entry.item.url + entry.index" class="website-tile" draggable="true"
+                @dragstart="startDrag(entry.index, $event)" @dragover.prevent @drop="dropWebsite(entry.index)" @dragend="finishDrag" @click="openWebsite(entry.item)">
                 <v-menu location="bottom end">
                   <template v-slot:activator="{ props }">
                     <v-btn v-bind="props" icon="mdi-dots-horizontal" size="x-small" variant="flat" class="website-more" @click.stop></v-btn>
                   </template>
                   <v-list density="compact" class="website-menu">
-                    <v-list-item prepend-icon="mdi-pencil-outline" title="重命名" @click="openRenameDialog(index)"></v-list-item>
-                    <v-list-item prepend-icon="mdi-delete-outline" title="删除" class="delete-menu-item" @click="removeWebsite(index)"></v-list-item>
+                    <v-list-item prepend-icon="mdi-pencil-outline" title="编辑" @click="openEditDialog(entry.index)"></v-list-item>
+                    <v-list-item prepend-icon="mdi-delete-outline" title="删除" class="delete-menu-item" @click="removeWebsite(entry.index)"></v-list-item>
                   </v-list>
                 </v-menu>
                 <div class="website-image-wrap">
-                  <v-img :src="item.img" :alt="item.title" class="website-image" contain>
+                  <v-img :src="entry.item.img" :alt="entry.item.title" class="website-image" contain>
                     <template v-slot:error>
-                      <div class="website-fallback">{{ item.title.slice(0, 1).toUpperCase() }}</div>
+                      <div class="website-fallback">{{ entry.item.title.slice(0, 1).toUpperCase() }}</div>
                     </template>
                   </v-img>
                 </div>
-                <div class="website-name">{{ item.title }}</div>
+                <div class="website-name">{{ entry.item.title }}</div>
               </v-card>
               <button type="button" class="website-add-tile" @click="openAddDialog">
                 <span class="website-add-icon"><v-icon icon="mdi-plus"></v-icon></span>
@@ -103,6 +110,7 @@
               <v-text-field v-model="newWebsite.title" label="网站名称" variant="outlined"></v-text-field>
               <v-text-field v-model="newWebsite.url" label="网站地址" placeholder="https://example.com" variant="outlined"></v-text-field>
               <v-text-field v-model="newWebsite.img" label="图片地址（可选）" hint="留空时自动使用网站图标" persistent-hint variant="outlined"></v-text-field>
+              <v-select v-model="newWebsite.categoryId" :items="categories" item-title="name" item-value="id" label="所属分类" variant="outlined"></v-select>
               <v-alert v-if="formError" type="warning" variant="tonal" density="compact" class="mb-3">{{ formError }}</v-alert>
               <v-card-actions>
                 <v-spacer></v-spacer>
@@ -112,14 +120,38 @@
             </v-card>
           </v-dialog>
 
-          <v-dialog v-model="renameDialog" width="420">
+          <v-dialog v-model="editDialog" width="480">
             <v-card class="pa-5" rounded="xl">
-              <v-card-title>重命名快捷方式</v-card-title>
-              <v-text-field v-model="renameTitle" label="新名称" maxlength="30" variant="outlined" autofocus @keyup.enter="renameWebsite"></v-text-field>
+              <v-card-title>编辑快捷方式</v-card-title>
+              <v-text-field v-model="editWebsite.title" label="网站名称" maxlength="30" variant="outlined" autofocus></v-text-field>
+              <v-text-field v-model="editWebsite.url" label="网站地址" variant="outlined"></v-text-field>
+              <v-text-field v-model="editWebsite.img" label="图片地址" variant="outlined"></v-text-field>
+              <v-select v-model="editWebsite.categoryId" :items="categories" item-title="name" item-value="id" label="所属分类" variant="outlined"></v-select>
+              <v-alert v-if="editError" type="warning" variant="tonal" density="compact" class="mb-3">{{ editError }}</v-alert>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn @click="renameDialog = false">取消</v-btn>
-                <v-btn color="primary" variant="flat" @click="renameWebsite">保存</v-btn>
+                <v-btn @click="editDialog = false">取消</v-btn>
+                <v-btn color="primary" variant="flat" @click="saveWebsiteEdit">保存</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+          <v-dialog v-model="categoryDialog" width="500">
+            <v-card class="pa-5" rounded="xl">
+              <v-card-title>管理网站分类</v-card-title>
+              <div class="category-manager-list">
+                <div v-for="category in categories" :key="category.id" class="category-manager-row">
+                  <v-text-field v-model="category.name" density="compact" variant="outlined" hide-details maxlength="12" @change="persistCategories"></v-text-field>
+                  <v-btn icon="mdi-delete-outline" variant="text" color="error" :disabled="categories.length === 1" title="删除分类" @click="removeCategory(category.id)"></v-btn>
+                </div>
+              </div>
+              <div class="category-add-row mt-4">
+                <v-text-field v-model="newCategoryName" density="compact" variant="outlined" hide-details label="新分类名称" maxlength="12" @keyup.enter="addCategory"></v-text-field>
+                <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="addCategory">添加</v-btn>
+              </div>
+              <v-card-actions class="mt-3">
+                <v-spacer></v-spacer>
+                <v-btn color="primary" variant="flat" @click="persistCategories(); categoryDialog = false">完成</v-btn>
               </v-card-actions>
             </v-card>
           </v-dialog>
@@ -141,14 +173,19 @@ export default {
 	data() {
 		return {
 			websites: [],
+			categories: [],
+			activeCategoryId: 'study',
+			categoryDialog: false,
+			newCategoryName: '',
 			dragIndex: null,
 			wasDragging: false,
 			addDialog: false,
-			renameDialog: false,
-			renameIndex: -1,
-			renameTitle: '',
+			editDialog: false,
+			editIndex: -1,
+			editWebsite: { title: '', url: '', img: '', categoryId: 'study' },
+			editError: '',
 			formError: '',
-			newWebsite: { title: '', url: '', img: '' },
+			newWebsite: { title: '', url: '', img: '', categoryId: 'study' },
 			searchQuery: '',
 			selectedEngine: { title: 'Bing', value: 'bing' },
       		searchEngines :[
@@ -165,12 +202,27 @@ export default {
 			immediate: true,
 			handler(value){
 				if(!Array.isArray(value)) return;
+				const defaults = [
+					{ id: 'vpn', name: '梯子' },
+					{ id: 'study', name: '学习' },
+					{ id: 'ip', name: 'IP' },
+					{ id: 'entertainment', name: '娱乐' }
+				];
+				try {
+					const savedCategories = JSON.parse(localStorage.getItem('xiaozhou-website-categories'));
+					this.categories = Array.isArray(savedCategories) && savedCategories.length ? savedCategories : defaults;
+				} catch {
+					this.categories = defaults;
+				}
 				const saved = localStorage.getItem('xiaozhou-websites');
 				try {
-					this.websites = saved ? JSON.parse(saved) : value.map(item => ({ title: item.title, url: item.url, img: item.img }));
+					const parsed = saved ? JSON.parse(saved) : value.map(item => ({ title: item.title, url: item.url, img: item.img }));
+					this.websites = parsed.map(item => ({ ...item, categoryId: item.categoryId || 'study' }));
 				} catch {
-					this.websites = value.map(item => ({ title: item.title, url: item.url, img: item.img }));
+					this.websites = value.map(item => ({ title: item.title, url: item.url, img: item.img, categoryId: 'study' }));
 				}
+				this.persistCategories();
+				this.persistWebsites();
 			}
 		}
 	},
@@ -182,14 +234,24 @@ export default {
 		isUrl(){
 			const str = this.searchQuery.trim();
   			return this.isLikelyUrl(str);
+		},
+		currentWebsites(){
+			return this.websites.map((item, index) => ({ item, index })).filter(entry => entry.item.categoryId === this.activeCategoryId);
 		}
 	},
     methods:{
 	  persistWebsites(){
 		localStorage.setItem('xiaozhou-websites', JSON.stringify(this.websites));
 	  },
+	  persistCategories(){
+		this.categories = this.categories.filter(category => category.name.trim()).map(category => ({ ...category, name: category.name.trim() }));
+		localStorage.setItem('xiaozhou-website-categories', JSON.stringify(this.categories));
+	  },
+	  countByCategory(categoryId){
+		return this.websites.filter(item => item.categoryId === categoryId).length;
+	  },
 	  openAddDialog(){
-		this.newWebsite = { title: '', url: '', img: '' };
+		this.newWebsite = { title: '', url: '', img: '', categoryId: this.activeCategoryId };
 		this.formError = '';
 		this.addDialog = true;
 	  },
@@ -204,7 +266,7 @@ export default {
 		try {
 		  const parsed = new URL(url);
 		  const img = this.newWebsite.img.trim() || `${parsed.origin}/favicon.ico`;
-		  this.websites.push({ title, url: parsed.href, img });
+		  this.websites.push({ title, url: parsed.href, img, categoryId: this.newWebsite.categoryId || this.activeCategoryId });
 		  this.persistWebsites();
 		  this.addDialog = false;
 		} catch {
@@ -215,17 +277,41 @@ export default {
 		this.websites.splice(index, 1);
 		this.persistWebsites();
 	  },
-	  openRenameDialog(index){
-		this.renameIndex = index;
-		this.renameTitle = this.websites[index]?.title || '';
-		this.renameDialog = true;
+	  openEditDialog(index){
+		this.editIndex = index;
+		this.editWebsite = { ...this.websites[index] };
+		this.editError = '';
+		this.editDialog = true;
 	  },
-	  renameWebsite(){
-		const title = this.renameTitle.trim();
-		if(!title || this.renameIndex < 0) return;
-		this.websites[this.renameIndex].title = title;
+	  saveWebsiteEdit(){
+		const title = this.editWebsite.title.trim();
+		let url = this.editWebsite.url.trim();
+		if(!title || !url || this.editIndex < 0){ this.editError = '请填写网站名称和地址。'; return; }
+		if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+		try {
+		  const parsed = new URL(url);
+		  this.websites[this.editIndex] = { ...this.editWebsite, title, url: parsed.href, img: this.editWebsite.img.trim() || `${parsed.origin}/favicon.ico` };
+		  this.persistWebsites();
+		  this.editDialog = false;
+		} catch { this.editError = '网站地址格式不正确。'; }
+	  },
+	  addCategory(){
+		const name = this.newCategoryName.trim();
+		if(!name || this.categories.some(category => category.name === name)) return;
+		const id = `category-${Date.now()}`;
+		this.categories.push({ id, name });
+		this.newCategoryName = '';
+		this.persistCategories();
+		this.activeCategoryId = id;
+	  },
+	  removeCategory(categoryId){
+		if(this.categories.length <= 1) return;
+		const fallback = this.categories.find(category => category.id !== categoryId);
+		this.websites.forEach(item => { if(item.categoryId === categoryId) item.categoryId = fallback.id; });
+		this.categories = this.categories.filter(category => category.id !== categoryId);
+		if(this.activeCategoryId === categoryId) this.activeCategoryId = fallback.id;
+		this.persistCategories();
 		this.persistWebsites();
-		this.renameDialog = false;
 	  },
 	  startDrag(index, event){
 		this.dragIndex = index;
@@ -322,6 +408,41 @@ export default {
 	flex-wrap: wrap;
 	gap: 14px 12px;
 	align-items: flex-start;
+}
+
+.category-tabs {
+	padding: 3px 6px;
+	border-radius: 16px;
+	background: rgba(255,255,255,.16);
+}
+
+.category-count {
+	margin-left: 7px;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	display: inline-grid;
+	place-items: center;
+	border-radius: 9px;
+	font-size: .66rem;
+	background: rgba(255,255,255,.44);
+}
+
+.category-manager-list {
+	display: grid;
+	gap: 10px;
+}
+
+.category-manager-row,
+.category-add-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.category-manager-row .v-text-field,
+.category-add-row .v-text-field {
+	flex: 1;
 }
 
 .website-tile {
