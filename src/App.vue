@@ -71,6 +71,7 @@
                 </v-card>
 
                 <div class="daily-checklist-shell">
+                  <a href="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/" target="_blank" rel="noopener" style="display:block;color:white;padding:8px;text-align:center">🔒 私人清单 · 登录工作台后查看（无法显示时点击打开）</a>
                   <v-menu location="end center" :close-on-content-click="false">
                     <template v-slot:activator="{ props }">
                       <v-btn v-bind="props" class="daily-opacity-button" icon="mdi-opacity" size="x-small" title="调整清单透明度"></v-btn>

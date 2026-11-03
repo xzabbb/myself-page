@@ -266,6 +266,7 @@ export default {
 		try {
 			await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/shortcuts', {
 				method: 'PUT',
+				credentials: 'include',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ data: { categories: this.categories, websites: this.websites } })
 			});
@@ -275,7 +276,7 @@ export default {
 	  },
 	  async loadRemoteShortcuts(seedWhenEmpty = false){
 		try {
-			const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/shortcuts', { cache: 'no-store' });
+			const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/shortcuts', { cache: 'no-store', credentials: 'include' });
 			if(!response.ok) throw new Error(`同步请求失败: ${response.status}`);
 			const result = await response.json();
 			if(result.data?.categories?.length && Array.isArray(result.data.websites)){
