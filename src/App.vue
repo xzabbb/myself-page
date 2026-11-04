@@ -86,9 +86,10 @@
                   </v-menu>
                   <div class="daily-checklist-embed daily-native" :style="{ opacity: checklistOpacity }">
                     <div v-if="dailyAuthRequired" class="daily-auth-state">
-                      <span>🔒 登录后才能读取私人清单</span>
-                      <a href="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/" target="_blank" rel="noopener" @click="scheduleDailyReload">打开工作台登录</a>
-                      <button type="button" @click="loadDailyChecklist">登录完成后刷新</button>
+                      <span>🔒 输入清单密码后同步</span>
+                      <input v-model="dailyPinDraft" inputmode="numeric" maxlength="20" type="password" placeholder="清单密码" @keyup.enter="connectDailyChecklist">
+                      <button type="button" @click="connectDailyChecklist">连接私人清单</button>
+                      <small v-if="dailyAuthError">密码不正确，请重新输入</small>
                     </div>
                     <template v-else>
                       <form class="daily-native-form" @submit.prevent="addDailyItem">

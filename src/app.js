@@ -33,6 +33,7 @@ export default {
       checklistOpacity: 0.92,
       dailyDate: '', dailyState: {}, dailyRevision: 0, dailyDraft: '',
       dailyLoading: true, dailySaving: false, dailyAuthRequired: false,
+      dailyPin: '', dailyPinDraft: '', dailyAuthError: false,
       videosrc: '',
       ismusicplayer: false,
       isPlaying:false,
@@ -84,6 +85,8 @@ export default {
     const savedChecklistOpacity = Number(localStorage.getItem('xiaozhou-checklist-opacity'));
     if (savedChecklistOpacity >= 0.35 && savedChecklistOpacity <= 1) this.checklistOpacity = savedChecklistOpacity;
     this.dailyDate = this.localDateKey();
+    this.dailyPin = localStorage.getItem('xiaozhou-daily-pin') || '';
+    this.dailyPinDraft = this.dailyPin;
     this.loadDailyChecklist();
     this.isloading = true;
     let imageurl = "";
@@ -222,27 +225,35 @@ export default {
     },
 
     async loadDailyChecklist(){
+      if (!this.dailyPin) { this.dailyLoading = false; this.dailyAuthRequired = true; return; }
       this.dailyLoading = true;
       try {
-        const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/state/daily', { credentials: 'include', cache: 'no-store' });
+        const response = await fetch('https://xiaozhou-daily-sync.tealbowl14.chatgpt.site/api/daily', { cache: 'no-store', headers: { 'x-daily-pin': this.dailyPin } });
         if (!response.ok) throw new Error(`auth:${response.status}`);
         const result = await response.json();
         this.dailyState = result.data && typeof result.data === 'object' ? result.data : {};
         this.dailyRevision = Number(result.revision) || 0;
         this.dailyAuthRequired = false;
+        this.dailyAuthError = false;
       } catch (error) {
         console.warn('私人清单读取失败:', error);
         this.dailyAuthRequired = true;
+        this.dailyAuthError = true;
       } finally { this.dailyLoading = false; }
     },
 
-    scheduleDailyReload(){ window.setTimeout(() => this.loadDailyChecklist(), 3000); },
+    async connectDailyChecklist(){
+      const pin=this.dailyPinDraft.trim(); if(!pin)return;
+      this.dailyPin=pin; localStorage.setItem('xiaozhou-daily-pin',pin);
+      await this.loadDailyChecklist();
+      if(this.dailyAuthRequired){localStorage.removeItem('xiaozhou-daily-pin');this.dailyPin='';}
+    },
 
     async saveDailyChecklist(retry = true){
       this.dailySaving = true;
       try {
-        const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/state/daily', {
-          method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
+        const response = await fetch('https://xiaozhou-daily-sync.tealbowl14.chatgpt.site/api/daily', {
+          method: 'PUT', headers: { 'content-type': 'application/json', 'x-daily-pin': this.dailyPin },
           body: JSON.stringify({ data: this.dailyState, revision: this.dailyRevision })
         });
         if (response.status === 409 && retry) { await this.loadDailyChecklist(); return false; }
