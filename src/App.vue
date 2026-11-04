@@ -71,7 +71,10 @@
                 </v-card>
 
                 <div class="daily-checklist-shell">
-                  <a href="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/" target="_blank" rel="noopener" style="display:block;color:white;padding:8px;text-align:center">🔒 私人清单 · 登录工作台后查看（无法显示时点击打开）</a>
+                  <div class="daily-native-head">
+                    <div><small>DAILY LIST</small><strong>今日清单</strong><span>{{ dailyDate }}</span></div>
+                    <span class="daily-progress">{{ dailyDone }}/{{ dailyItems.length }}</span>
+                  </div>
                   <v-menu location="end center" :close-on-content-click="false">
                     <template v-slot:activator="{ props }">
                       <v-btn v-bind="props" class="daily-opacity-button" icon="mdi-opacity" size="x-small" title="调整清单透明度"></v-btn>
@@ -81,8 +84,28 @@
                       <v-slider v-model="checklistOpacity" :min="0.35" :max="1" :step="0.05" hide-details color="primary"></v-slider>
                     </v-card>
                   </v-menu>
-                  <div class="daily-checklist-embed" :style="{ opacity: checklistOpacity }">
-                    <iframe src="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/?embed=daily" title="每日清单" loading="lazy"></iframe>
+                  <div class="daily-checklist-embed daily-native" :style="{ opacity: checklistOpacity }">
+                    <div v-if="dailyAuthRequired" class="daily-auth-state">
+                      <span>🔒 登录后才能读取私人清单</span>
+                      <a href="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/" target="_blank" rel="noopener" @click="scheduleDailyReload">打开工作台登录</a>
+                      <button type="button" @click="loadDailyChecklist">登录完成后刷新</button>
+                    </div>
+                    <template v-else>
+                      <form class="daily-native-form" @submit.prevent="addDailyItem">
+                        <input v-model="dailyDraft" maxlength="120" placeholder="添加今日任务" :disabled="dailySaving">
+                        <button type="submit" :disabled="dailySaving || !dailyDraft.trim()">＋</button>
+                      </form>
+                      <div v-if="dailyLoading" class="daily-empty">正在同步清单…</div>
+                      <div v-else-if="!dailyItems.length" class="daily-empty">今天还没有待办</div>
+                      <div v-else class="daily-native-list">
+                        <label v-for="item in dailyItems" :key="item.id" :class="{ done: item.done }">
+                          <input type="checkbox" :checked="item.done" @change="toggleDailyItem(item)">
+                          <span>{{ item.title }}</span>
+                          <button type="button" title="删除" @click.prevent="deleteDailyItem(item)">×</button>
+                        </label>
+                      </div>
+                    </template>
+                    <a class="daily-workbench-link" href="https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/" target="_blank" rel="noopener">打开完整工作台 ↗</a>
                   </div>
                 </div>
 

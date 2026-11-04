@@ -31,6 +31,8 @@ export default {
       signatureDraft: '',
       signatureDialog: false,
       checklistOpacity: 0.92,
+      dailyDate: '', dailyState: {}, dailyRevision: 0, dailyDraft: '',
+      dailyLoading: true, dailySaving: false, dailyAuthRequired: false,
       videosrc: '',
       ismusicplayer: false,
       isPlaying:false,
@@ -81,6 +83,8 @@ export default {
     this.signature = localStorage.getItem('xiaozhou-signature') || this.configdata.signature || '希望你勇敢自信';
     const savedChecklistOpacity = Number(localStorage.getItem('xiaozhou-checklist-opacity'));
     if (savedChecklistOpacity >= 0.35 && savedChecklistOpacity <= 1) this.checklistOpacity = savedChecklistOpacity;
+    this.dailyDate = this.localDateKey();
+    this.loadDailyChecklist();
     this.isloading = true;
     let imageurl = "";
     this.dataConsole();
@@ -181,6 +185,12 @@ export default {
   },
 
   computed: {
+    dailyItems() {
+      return Array.isArray(this.dailyState?.[this.dailyDate]) ? this.dailyState[this.dailyDate] : [];
+    },
+    dailyDone() {
+      return this.dailyItems.filter(item => item.done).length;
+    },
     currentSong() {
 		  return this.musicinfo?.[this.playlistIndex];
     },
@@ -204,6 +214,65 @@ export default {
       this.signature = value;
       localStorage.setItem('xiaozhou-signature', value);
       this.signatureDialog = false;
+    },
+
+    localDateKey(){
+      const now = new Date();
+      return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    },
+
+    async loadDailyChecklist(){
+      this.dailyLoading = true;
+      try {
+        const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/state/daily', { credentials: 'include', cache: 'no-store' });
+        if (!response.ok) throw new Error(`auth:${response.status}`);
+        const result = await response.json();
+        this.dailyState = result.data && typeof result.data === 'object' ? result.data : {};
+        this.dailyRevision = Number(result.revision) || 0;
+        this.dailyAuthRequired = false;
+      } catch (error) {
+        console.warn('私人清单读取失败:', error);
+        this.dailyAuthRequired = true;
+      } finally { this.dailyLoading = false; }
+    },
+
+    scheduleDailyReload(){ window.setTimeout(() => this.loadDailyChecklist(), 3000); },
+
+    async saveDailyChecklist(retry = true){
+      this.dailySaving = true;
+      try {
+        const response = await fetch('https://xiaozhou-embedded-workbench.tealbowl14.chatgpt.site/api/state/daily', {
+          method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ data: this.dailyState, revision: this.dailyRevision })
+        });
+        if (response.status === 409 && retry) { await this.loadDailyChecklist(); return false; }
+        if (!response.ok) throw new Error(`save:${response.status}`);
+        const result = await response.json();
+        this.dailyRevision = Number(result.revision) || this.dailyRevision + 1;
+        this.dailyAuthRequired = false;
+        return true;
+      } catch (error) {
+        console.warn('私人清单保存失败:', error);
+        this.dailyAuthRequired = true;
+        return false;
+      } finally { this.dailySaving = false; }
+    },
+
+    async addDailyItem(){
+      const title = this.dailyDraft.trim(); if (!title) return;
+      this.dailyState = { ...this.dailyState, [this.dailyDate]: [...this.dailyItems, { id: crypto.randomUUID?.() || `${Date.now()}-daily`, title, description: '', done: false }] };
+      this.dailyDraft = ''; await this.saveDailyChecklist();
+    },
+
+    async toggleDailyItem(item){
+      this.dailyState = { ...this.dailyState, [this.dailyDate]: this.dailyItems.map(current => current.id === item.id ? { ...current, done: !current.done } : current) };
+      await this.saveDailyChecklist();
+    },
+
+    async deleteDailyItem(item){
+      const items = this.dailyItems.filter(current => current.id !== item.id); const next = { ...this.dailyState };
+      if (items.length) next[this.dailyDate] = items; else delete next[this.dailyDate];
+      this.dailyState = next; await this.saveDailyChecklist();
     },
 
     setMainProperty(imageurl){
